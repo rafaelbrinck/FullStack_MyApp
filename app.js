@@ -10,12 +10,20 @@ app.get('/produtos', (req, res) => {
   res.send('Listar Produtos')
 })
 
-app.get('/produtos/1', (req, res) => {
-  res.send('Listando Produtos por ID')
+app.get('/produtos/:id', (req, res) => {
+  res.send('Buscar Produtos por ID')
 })
 
 app.post('/produtos', (req, res) =>{
+  res.send('Inserir Produto');
+});
 
+app.put('/produtos/:id', (req, res) =>{
+  res.send('Atualizar Produtos');
+});
+
+app.delete('/produtos/:id', (req, res) =>{
+  res.send('Deletar Produtos');
 });
 
 app.listen(port, () => {
