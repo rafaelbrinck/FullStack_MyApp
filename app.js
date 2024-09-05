@@ -1,4 +1,14 @@
 const express = require('express')
+const { Client } = require('pg') 
+
+const conexao = {
+  host: 'localhost',
+  port: 5432,
+  user: 'postgres',
+  password: 'banco',
+  database: 'crud_produtos'
+}
+
 const app = express()
 const port = 3000
 
@@ -16,19 +26,47 @@ app.get('/', (req, res) => {
   res.json(produtos)
 })
 
-app.get('/produtos', (req, res) => {
-  res.send(produtos)
+app.get('/produtos', async (req, res) => {
+  const client = new Client(conexao)
+  await client.connect()
+  
+  const result = await client.query('SELECT * FROM PRODUTOS')
+  const listaProdutos = result.rows
+
+  await client.end()
+  res.json(listaProdutos)
 })
 
-app.get('/produtos/:id', (req, res) => {
+app.get('/produtos/:id', async (req, res) => {
   const id = req.params.id 
-  res.status(201).json(produtos[id])
+  const client = new Client(conexao)
+  await client.connect()
+  const result = await client.query('SELECT * FROM PRODUTOS WHERE id=$1', [id])
+  const produto = result.rows[0]
+  await client.end()
+  if(produto){
+    res.status(200).json(produto)
+  }else{
+    res.status(404).json({erro: "Produto nao encontrado!"})
+  }
+
 })
 
-app.post('/produtos', (req, res) => {
+app.post('/produtos', async (req, res) => {
   const produto = req.body
-  console.log(produto)
-  res.json(produto)
+  if(!produto || !produto.nome || !produto.categoria || !produto.preco){
+    res.status(400).json({ erro: "Informacoes de produto incompletas!"})
+  }else{
+    const client = new Client(conexao)
+    await client.connect()
+    const result = await client.query(
+      'INSERT INTO PRODUTOS (nome, categoria, preco) VALUES ($1, $2, $3) RETURNING *', [produto.nome, produto.categoria, produto.preco]
+    )
+    const produtoInserido = result.rows[0]
+    await client.end()
+
+    res.status(201).json(produtoInserido)
+  }
 })
 
 
@@ -40,9 +78,13 @@ app.put('/produtos/:id', (req, res) =>{
   res.status(201).json(produto[id])
 });
 
-app.delete('/produtos/:id', (req, res) =>{
+app.delete('/produtos/:id', async (req, res) =>{
   const id = req.params.id
-
+  // const client = new Client(conexao)
+  // await client.connect()
+  // const result = await client.query('DELETE FROM produtos WHERE id = $1',[id])
+  // await client.end()
+  // const produto = result.rows[id]
   res.status(201).json(produtos[id])
 });
 
